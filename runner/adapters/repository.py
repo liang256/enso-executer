@@ -44,7 +44,7 @@ class FileSystemRepository(AbstractRepository):
             tmp_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(tmp_module)
             return getattr(tmp_module, className)()
-        except (AttributeError, ImportError) as e:
+        except (AttributeError, ImportError, SyntaxError) as e:
             raise LoadScriptError(f"Error loading script {reference}: {e}")
 
 
