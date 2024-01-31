@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from runner.domain import model
 from runner.adapters import repository
 
@@ -14,7 +14,7 @@ def get(script_ref: str, repo: repository.AbstractRepository) -> model.AbstractS
 
 def execute(
     script_ref: str,
-    args,
+    args: Dict,
     repo: repository.AbstractRepository,
     dispatcher: model.AbstractDispathcer,
 ):
