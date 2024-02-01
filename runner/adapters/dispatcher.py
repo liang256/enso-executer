@@ -1,5 +1,6 @@
 import abc
 import uuid
+from typing import List, Tuple
 from runner.domain import model
 from runner.adapters import repository
 
@@ -10,7 +11,11 @@ def generate_job_id():
 
 class AbstractDispathcer(abc.ABC):
     @abc.abstractmethod
-    def execute(self, job: model.Job, repo: repository.AbstractRepository) -> str:
+    def execute(
+        self,
+        instructions: List[Tuple[str, dict]],
+        repo: repository.AbstractRepository,
+    ) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -23,11 +28,15 @@ class LocalDispathcer(AbstractDispathcer):
         super().__init__()
         self._executed = set()
 
-    def execute(self, job: model.Job, repo: repository.AbstractRepository) -> str:
-        for instruction in job:
-            script = repo.get(instruction.script_ref)
-            model.validate_args(script, instruction.args)
-            script.execute(instruction.args)
+    def execute(
+        self,
+        instructions: List[Tuple[str, dict]],
+        repo: repository.AbstractRepository,
+    ) -> str:
+        for script_ref, args in instructions:
+            script = repo.get(script_ref)
+            model.validate_args(script, args)
+            script.execute(args)
 
         job_id = generate_job_id()
         self._executed.add(job_id)

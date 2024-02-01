@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Tuple, List, Dict
 from runner.adapters import dispatcher
 from runner.service_layer import services
 from runner.domain import model
@@ -10,7 +10,7 @@ class FakeRepository(dict):
 
 
 class FakeDispatcher(set):
-    def execute(self, job: model.Job, repo) -> str:
+    def execute(self, instructions: List[Tuple[str, dict]], repo) -> str:
         job_id = dispatcher.generate_job_id()
         self.add(job_id)
         return job_id

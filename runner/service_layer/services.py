@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 from runner.domain import model
 from runner.adapters import repository, dispatcher
 
@@ -8,10 +8,9 @@ def get(script_ref: str, repo: repository.AbstractRepository) -> model.AbstractS
 
 
 def execute(
-    instructions: List[Tuple],
+    instructions: List[Tuple[str, dict]],
     repo: repository.AbstractRepository,
     dispatcher: dispatcher.AbstractDispathcer,
 ) -> str:
-    job = model.Job.from_primitive(instructions)
-    job_id = dispatcher.execute(job, repo)
+    job_id = dispatcher.execute(instructions, repo)
     return job_id

@@ -18,13 +18,11 @@ class FakeRepository:
 
 def test_local_dispatcher_execute():
     d = dispatcher.LocalDispathcer()
-    job = model.Job(
-        [
-            model.Instruction("open_file", {}),
-            model.Instruction("update_file", {}),
-            model.Instruction("save_file", {}),
-        ]
-    )
-    job_id = d.execute(job, FakeRepository())
+    instructions = [
+        ("open_file", {}),
+        ("update_file", {}),
+        ("save_file", {}),
+    ]
+    job_id = d.execute(instructions, FakeRepository())
 
     assert d.has_executed(job_id)
