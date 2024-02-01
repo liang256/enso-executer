@@ -1,15 +1,13 @@
 from runner.domain import model
-from typing import Dict, Tuple
+from typing import Dict
 
 
 class FakeScript(model.AbstractScript):
     ref = "fake_script"
+    required_args = tuple()
 
-    def execute(self, args: Dict[str, str]) -> None:
+    def execute(self, args: Dict) -> None:
         pass
-
-    def get_required_args(self) -> Tuple[str, ...]:
-        return tuple()
 
 
 def test_hash_str_and_dict_consistency():

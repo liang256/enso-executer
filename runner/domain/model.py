@@ -8,7 +8,7 @@ dataclass(frozen=True)
 
 class Instruction:
     script_ref: str
-    args: Dict[str, str]
+    args: Dict
     dispatcher: str
 
 
@@ -20,23 +20,22 @@ class MissingRequiredArguments(Exception):
 
 
 class AbstractScript(abc.ABC):
-    @abc.abstractmethod
-    def execute(self, args: Dict[str, str]) -> None:
-        raise NotImplementedError
+    ref: str # script reference
+    required_args: Tuple[str, ...] # required arguments
 
     @abc.abstractmethod
-    def get_required_args(self) -> Tuple[str, ...]:
+    def execute(self, args: Dict) -> None:
         raise NotImplementedError
 
 
-def validate_args(script: AbstractScript, args: Dict[str, str]):
-    missing_args = get_missing_args(script.get_required_args(), args)
+def validate_args(script: AbstractScript, args: Dict):
+    missing_args = get_missing_args(script.required_args, args)
     if missing_args:
         raise MissingRequiredArguments(script.__class__.__name__, missing_args)
 
 
 def get_missing_args(
-    required: Tuple[str, ...], args: Dict[str, str]
+    required: Tuple[str, ...], args: Dict
 ) -> Tuple[str, ...]:
     return tuple(req for req in required if req not in args)
 
@@ -48,7 +47,7 @@ def hash_str_and_dict(s: str, d: Dict):
 
 class AbstractDispathcer(abc.ABC):
     @abc.abstractmethod
-    def execute(self, script: AbstractScript, args: Dict[str, str]):
+    def execute(self, script: AbstractScript, args: Dict):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -61,7 +60,7 @@ class LocalDispathcer(AbstractDispathcer):
         super().__init__()
         self._executed = set()
 
-    def execute(self, script: AbstractScript, args: Dict[str, str]):
+    def execute(self, script: AbstractScript, args: Dict):
         script.execute(args)
         self._executed.add(hash_str_and_dict(script, args))
 
