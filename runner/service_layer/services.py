@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple
 from runner.domain import model
-from runner.adapters import repository
+from runner.adapters import repository, dispatcher
 
 
 def get(script_ref: str, repo: repository.AbstractRepository) -> model.AbstractScript:
@@ -10,9 +10,8 @@ def get(script_ref: str, repo: repository.AbstractRepository) -> model.AbstractS
 def execute(
     instructions: List[Tuple],
     repo: repository.AbstractRepository,
-    dispatcher: model.AbstractDispathcer,
-):
-    for script_ref, args in instructions:
-        script = get(script_ref, repo)
-        model.validate_args(script, args)
-        dispatcher.execute(script, args)
+    dispatcher: dispatcher.AbstractDispathcer,
+) -> str:
+    job = model.Job.from_primitive(instructions)
+    job_id = dispatcher.execute(job, repo)
+    return job_id

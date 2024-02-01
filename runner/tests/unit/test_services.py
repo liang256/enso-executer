@@ -1,4 +1,5 @@
 from typing import Dict
+from runner.adapters import dispatcher
 from runner.service_layer import services
 from runner.domain import model
 
@@ -9,11 +10,13 @@ class FakeRepository(dict):
 
 
 class FakeDispatcher(set):
-    def execute(self, script_instance: model.AbstractScript, args: Dict):
-        self.add(model.hash_str_and_dict(script_instance.ref, args))
+    def execute(self, job: model.Job, repo) -> str:
+        job_id = dispatcher.generate_job_id()
+        self.add(job_id)
+        return job_id
 
-    def has_executed(self, script_instance: model.AbstractScript, args: Dict) -> bool:
-        return model.hash_str_and_dict(script_instance.ref, args) in self
+    def has_executed(self, job_id: str) -> bool:
+        return job_id in self
 
 
 class FakeScript(model.AbstractScript):
@@ -45,7 +48,6 @@ def test_execute():
     dispatcher = FakeDispatcher()
     instructions = [("open_file", {}), ("update_file", {}), ("release_assets", {})]
 
-    services.execute(instructions, repo, dispatcher)
+    job_id = services.execute(instructions, repo, dispatcher)
 
-    for script in repo.list():
-        assert dispatcher.has_executed(script, {})
+    assert dispatcher.has_executed(job_id)

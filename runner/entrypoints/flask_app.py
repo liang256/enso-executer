@@ -2,7 +2,7 @@ import json
 from flask import Flask, request, jsonify
 
 from runner.domain import model
-from runner.adapters import repository
+from runner.adapters import repository, dispatcher
 from runner.service_layer import services
 
 
@@ -18,7 +18,7 @@ def execute_endpoint():
         services.execute(
             request.json["instructions"],
             repository.FileSystemRepository(),
-            model.LocalDispathcer(),
+            dispatcher.LocalDispathcer(),
         )
     except (
         json.decoder.JSONDecodeError,
