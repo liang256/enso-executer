@@ -16,8 +16,7 @@ def execute_endpoint():
 
     try:
         services.execute(
-            request.json["script"],
-            json.loads(request.json["args"]),
+            request.json["instructions"],
             repository.FileSystemRepository(),
             model.LocalDispathcer(),
         )
@@ -26,7 +25,6 @@ def execute_endpoint():
         model.MissingRequiredArguments,
         repository.ScriptNotFoundError,
         repository.LoadScriptError,
-        services.InvalidDispatcherError,
     ) as e:
         return {"message": f"{e.__class__.__name__}: {str(e)}"}, 400
 

@@ -4,7 +4,8 @@ from runner.domain import model
 
 
 class FakeRepository(dict):
-    pass
+    def list(self):
+        return self.values()
 
 
 class FakeDispatcher(set):
@@ -16,16 +17,18 @@ class FakeDispatcher(set):
 
 
 class FakeScript(model.AbstractScript):
-    ref = "fake_script"
     required_args = tuple()
 
+    def __init__(self, ref: str) -> None:
+        self.ref = ref
+
     def execute(self, args: Dict) -> None:
-        pass
+        print(f"execute {self.ref}")
 
 
 def test_get():
     script_ref = "fake_script"
-    repo = FakeRepository(fake_script=FakeScript())
+    repo = FakeRepository(fake_script=FakeScript(script_ref))
 
     script_instance = services.get(script_ref, repo)
 
@@ -34,13 +37,15 @@ def test_get():
 
 
 def test_execute():
-    script_ref = "fake_script"
-    args = {"data": "fake_data"}
-    repo = FakeRepository(fake_script=FakeScript())
+    repo = FakeRepository(
+        open_file=FakeScript("open_file"),
+        update_file=FakeScript("update_file"),
+        release_assets=FakeScript("release_assets"),
+    )
     dispatcher = FakeDispatcher()
+    instructions = [("open_file", {}), ("update_file", {}), ("release_assets", {})]
 
-    script_instance = services.get(script_ref, repo)
+    services.execute(instructions, repo, dispatcher)
 
-    services.execute(script_ref, args, repo, dispatcher)
-
-    assert dispatcher.has_executed(script_instance, args)
+    for script in repo.list():
+        assert dispatcher.has_executed(script, {})

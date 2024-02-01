@@ -21,22 +21,19 @@ def test_api(client):
 
 
 def test_happy_path_returns_201_and_execute_instruction(client):
-    script_name = "example_script"
-    args = {"file": "file/path"}
-    data = {"script": script_name, "args": json.dumps(args), "dispatcher": "local"}
-    r = client.post("/execute", json=data)
+    json_data = '{"instructions": [["example_script", {"data": 123}], ["example_script", {"data": 50}]], "dispatcher": "local"}'
+    r = client.post("/execute", json=json.loads(json_data))
 
     assert r.status_code == 201
     assert r.json["message"] == "success"
 
 
 def test_unhappy_path_returns_400_and_error_message(client):
-    script_name = "nonexisting_script"
-    data = {"script": script_name, "args": json.dumps({}), "dispatcher": "local"}
-    r = client.post("/execute", json=data)
+    json_data = '{"instructions": [["nonexisting_script", {"data": 50}]], "dispatcher": "local"}'
+    r = client.post("/execute", json=json.loads(json_data))
 
     assert r.status_code == 400
     assert (
-        f"ScriptNotFoundError: Script file {script_name}.py does not exist."
+        f"ScriptNotFoundError: Script file nonexisting_script.py does not exist."
         == r.json["message"]
     )

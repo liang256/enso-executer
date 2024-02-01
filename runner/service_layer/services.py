@@ -1,11 +1,6 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from runner.domain import model
 from runner.adapters import repository
-
-
-class InvalidDispatcherError(Exception):
-    def __init__(self, dispatcher_ref: str) -> None:
-        super().__init__(f"{dispatcher_ref} is invalid.")
 
 
 def get(script_ref: str, repo: repository.AbstractRepository) -> model.AbstractScript:
@@ -13,11 +8,11 @@ def get(script_ref: str, repo: repository.AbstractRepository) -> model.AbstractS
 
 
 def execute(
-    script_ref: str,
-    args: Dict,
+    instructions: List[Tuple],
     repo: repository.AbstractRepository,
     dispatcher: model.AbstractDispathcer,
 ):
-    script_instance = get(script_ref, repo)
-    model.validate_args(script_instance, args)
-    dispatcher.execute(script_instance, args)
+    for script_ref, args in instructions:
+        script = get(script_ref, repo)
+        model.validate_args(script, args)
+        dispatcher.execute(script, args)
