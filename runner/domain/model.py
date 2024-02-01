@@ -20,8 +20,8 @@ class MissingRequiredArguments(Exception):
 
 
 class AbstractScript(abc.ABC):
-    ref: str # script reference
-    required_args: Tuple[str, ...] # required arguments
+    ref: str  # script reference
+    required_args: Tuple[str, ...]  # required arguments
 
     @abc.abstractmethod
     def execute(self, args: Dict) -> None:
@@ -34,9 +34,7 @@ def validate_args(script: AbstractScript, args: Dict):
         raise MissingRequiredArguments(script.__class__.__name__, missing_args)
 
 
-def get_missing_args(
-    required: Tuple[str, ...], args: Dict
-) -> Tuple[str, ...]:
+def get_missing_args(required: Tuple[str, ...], args: Dict) -> Tuple[str, ...]:
     return tuple(req for req in required if req not in args)
 
 
