@@ -1,7 +1,9 @@
 import abc
 import os
+import inspect
 import importlib.util
 import importlib.machinery
+from typing import Optional
 from runner.domain import model
 
 
@@ -15,6 +17,10 @@ class LoadScriptError(Exception):
 
 class AbstractRepository(abc.ABC):
     @abc.abstractmethod
+    def add(self, script: model.AbstractScript) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get(self, reference) -> model.AbstractScript:
         raise NotImplementedError
 
@@ -25,11 +31,22 @@ def snake_to_camel(snake_str):
 
 
 class FileSystemRepository(AbstractRepository):
-    def get(self, reference):
-        scripts_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../domain/scripts")
-        )
-        file_path = os.path.join(scripts_dir, f"{reference}.py")
+    def __init__(self, root_dir: Optional[str] = None):
+        if root_dir and os.path.isdir(root_dir):
+            self.root_dir = root_dir
+        else:
+            self.root_dir = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../domain/scripts")
+            )
+
+    def add(self, script: model.AbstractScript) -> str:
+        src_code = inspect.getsource(script.__class__)
+        file_path = os.path.join(self.root_dir, f"{script.ref}.py")
+        with open(file_path, "w") as file:
+            file.write(src_code)
+
+    def get(self, reference) -> model.AbstractScript:
+        file_path = os.path.join(self.root_dir, f"{reference}.py")
 
         if not os.path.exists(file_path):
             raise ScriptNotFoundError(f"Script file {reference}.py does not exist.")
@@ -44,7 +61,7 @@ class FileSystemRepository(AbstractRepository):
             tmp_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(tmp_module)
             return getattr(tmp_module, className)()
-        except (AttributeError, ImportError) as e:
+        except (AttributeError, ImportError, SyntaxError) as e:
             raise LoadScriptError(f"Error loading script {reference}: {e}")
 
 

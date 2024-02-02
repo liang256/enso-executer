@@ -1,34 +1,37 @@
-from typing import Dict, Tuple
+from typing import Tuple, List, Dict
+from runner.adapters import dispatcher
 from runner.service_layer import services
-from runner.adapters import repository
 from runner.domain import model
 
 
 class FakeRepository(dict):
-    pass
+    def list(self):
+        return self.values()
 
 
 class FakeDispatcher(set):
-    def execute(self, script_instance: model.AbstractScript, args: Dict):
-        self.add(model.hash_str_and_dict(script_instance.ref, args))
+    def execute(self, instructions: List[Tuple[str, dict]], repo) -> str:
+        job_id = dispatcher.generate_job_id()
+        self.add(job_id)
+        return job_id
 
-    def has_executed(self, script_instance: model.AbstractScript, args: Dict) -> bool:
-        return model.hash_str_and_dict(script_instance.ref, args) in self
+    def has_executed(self, job_id: str) -> bool:
+        return job_id in self
 
 
 class FakeScript(model.AbstractScript):
-    ref = "fake_script"
+    required_args = tuple()
 
-    def execute(self, args: Dict[str, str]) -> None:
-        pass
+    def __init__(self, ref: str) -> None:
+        self.ref = ref
 
-    def get_required_args(self) -> Tuple[str, ...]:
-        return tuple()
+    def execute(self, args: Dict) -> None:
+        print(f"execute {self.ref}")
 
 
 def test_get():
     script_ref = "fake_script"
-    repo = FakeRepository(fake_script=FakeScript())
+    repo = FakeRepository(fake_script=FakeScript(script_ref))
 
     script_instance = services.get(script_ref, repo)
 
@@ -37,13 +40,14 @@ def test_get():
 
 
 def test_execute():
-    script_ref = "fake_script"
-    args = {"data": "fake_data"}
-    repo = FakeRepository(fake_script=FakeScript())
+    repo = FakeRepository(
+        open_file=FakeScript("open_file"),
+        update_file=FakeScript("update_file"),
+        release_assets=FakeScript("release_assets"),
+    )
     dispatcher = FakeDispatcher()
+    instructions = [("open_file", {}), ("update_file", {}), ("release_assets", {})]
 
-    script_instance = services.get(script_ref, repo)
+    job_id = services.execute(instructions, repo, dispatcher)
 
-    services.execute(script_ref, args, repo, dispatcher)
-
-    assert dispatcher.has_executed(script_instance, args)
+    assert dispatcher.has_executed(job_id)

@@ -4,11 +4,11 @@ import pytest
 
 
 class FakeScript(model.AbstractScript):
-    def execute(self, args: Dict[str, str]) -> None:
-        pass
+    ref = "fake_script"
+    required_args = ("name", "age")
 
-    def get_required_args(self) -> Tuple[str, ...]:
-        return ("name", "age")
+    def execute(self, args: Dict) -> None:
+        pass
 
 
 def test_error_for_invalid_args():

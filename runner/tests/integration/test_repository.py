@@ -1,47 +1,91 @@
 import pytest
 import os
+import inspect
+from typing import Dict
 from runner.adapters import repository
+from runner.domain import model
 
 
-def create_class_file(package_path, base_name, class_content):
-    file_name = f"{base_name}.py"
-    file_path = os.path.join(package_path, file_name)
-    with open(file_path, "w") as file:
-        file.write(class_content)
-    return file_path
+class FileTestingUnionOfWork:
+    def __init__(self, root_dir: str, base_name: str, content: str):
+        self.root_dir = root_dir
+        self.base_name = base_name
+        self.content = content
+
+    @property
+    def file_path(self):
+        return os.path.join(self.root_dir, f"{self.base_name}.py")
+
+    def __enter__(self):
+        with open(self.file_path, "w") as f:
+            f.write(self.content)
+
+    def __exit__(self, *args):
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
 
 
-def remove_class_file(file_path):
+def remove_file(file_path):
     if os.path.exists(file_path):
         os.remove(file_path)
 
 
 @pytest.fixture
-def fake_script_file():
-    package_path = os.path.join(os.path.dirname(__file__), "../../domain/scripts")
-    base_name = "fake_script"
-    class_content = "class FakeScript:\n    pass\n"
-
-    file_path = create_class_file(package_path, base_name, class_content)
-
-    # Yield the file path to the test
-    yield file_path
-
-    # Clean up: remove the class file
-    remove_class_file(file_path)
+def package_path(tmp_path):
+    root_path = os.path.join(tmp_path, "scripts")
+    if not os.path.isdir(root_path):
+        os.makedirs(root_path, exist_ok=True)
+    assert os.path.isdir(root_path)
+    return root_path
 
 
-def test_file_system_repository_can_get_script(fake_script_file):
+class FakeNewScript(model.AbstractScript):
+    ref = "fake_new_script"
+    required_args = tuple()
+
+    def execute(self, args: Dict) -> None:
+        # check if this line be written into file
+        pass
+
+
+def test_file_system_repository_can_add_script(package_path):
+    new_script = FakeNewScript()
+    repo = repository.FileSystemRepository(package_path)
+    repo.add(new_script)
+
+    expected_script_path = os.path.join(package_path, f"{new_script.ref}.py")
+
+    assert os.path.exists(expected_script_path)
+    with open(expected_script_path) as f:
+        assert "# check if this line be written into file" in f.read()
+    remove_file(expected_script_path)
+
+
+def test_file_system_repository_can_get_script(package_path):
     ref = "fake_script"
-    repo = repository.FileSystemRepository()
-    retrieved_script = repo.get(ref)
+    content = "class FakeScript:\n    pass\n"
+    uow = FileTestingUnionOfWork(package_path, ref, content)
+    repo = repository.FileSystemRepository(package_path)
 
-    assert retrieved_script is not None
-    assert retrieved_script.__class__.__name__ == "FakeScript"
+    with uow:
+        retrieved_script = repo.get(ref)
+
+        assert retrieved_script is not None
+        assert retrieved_script.__class__.__name__ == "FakeScript"
 
 
-def test_file_system_repository_fail_to_get_script_since_file_not_exist():
+def test_file_system_repository_fail_to_get_script_since_file_not_exist(package_path):
     ref = "non_exist_script"
     expected_msg = f"Script file {ref}.py does not exist."
     with pytest.raises(repository.ScriptNotFoundError, match=expected_msg):
-        repository.FileSystemRepository().get(ref)
+        repository.FileSystemRepository(package_path).get(ref)
+
+
+def test_file_system_repository_fail_to_load_script(package_path):
+    ref = "unloadable_script"
+    content = "invalid python script file"
+    expected_msg = f"Error loading script {ref}"
+
+    with FileTestingUnionOfWork(package_path, ref, content):
+        with pytest.raises(repository.LoadScriptError, match=expected_msg):
+            repository.FileSystemRepository(package_path).get(ref)
