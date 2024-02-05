@@ -15,7 +15,7 @@ class Increamented(events.Event):
 
 
 def test_messagebus_can_handle():
-    global_handle_cnt = [0] # track total times in handlers
+    global_handle_cnt = [0]  # track total times in handlers
 
     def broadcast_event(event, repo, msg_queue):
         global_handle_cnt[0] += 1
@@ -29,11 +29,12 @@ def test_messagebus_can_handle():
 
     history = []
 
-    messagebus.COMMAND_HANDLERS = {IncreamentCommand: increament}
+    messagebus.COMMAND_HANDLERS[IncreamentCommand] = increament
 
-    messagebus.EVENT_HANDLERS = {
-        Increamented: [broadcast_event, do_other_thing_after_increament]
-    }
+    messagebus.EVENT_HANDLERS[Increamented] = [
+        broadcast_event,
+        do_other_thing_after_increament,
+    ]
 
     results = messagebus.handle(IncreamentCommand(), None, history)
 
@@ -41,3 +42,6 @@ def test_messagebus_can_handle():
     assert type(history[0]) == IncreamentCommand
     assert type(history[1]) == Increamented
     assert global_handle_cnt[0] == 3
+
+    del messagebus.COMMAND_HANDLERS[IncreamentCommand]
+    del messagebus.EVENT_HANDLERS[Increamented]

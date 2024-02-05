@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict
+from runner.adapters import dispatcher
 
 
 class Command:
@@ -18,6 +19,6 @@ class QueryMissingArgsForScript(Command):
 
 
 @dataclass
-class ExecuteScript(Command):
-    script_ref: str
-    args: Dict
+class ExecuteInstructions(Command):
+    instructions: tuple
+    dispatcher: dispatcher.AbstractDispathcer

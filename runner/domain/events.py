@@ -7,6 +7,6 @@ class Event:
 
 
 @dataclass
-class ScriptExecuted(Event):
+class InstructionsExecuted(Event):
     job_id: str
     instructions: List[Tuple[str, Dict]]

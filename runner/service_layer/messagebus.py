@@ -14,11 +14,11 @@ Message = Union[events.Event, commands.Command]
 COMMAND_HANDLERS = {
     commands.QueryScript: handlers.query_script,
     commands.QueryMissingArgsForScript: handlers.query_missing_args_for_script,
-    commands.ExecuteScript: handlers.execute_script,
+    commands.ExecuteInstructions: handlers.execute_instructions,
 }
 
 
-EVENT_HANDLERS = {events.ScriptExecuted: []}
+EVENT_HANDLERS = {events.InstructionsExecuted: []}
 
 
 def handle(msg: Message, repo: repository.AbstractRepository, history: List[Message]):
