@@ -1,46 +1,43 @@
-from runner.domain import events
+from runner.domain import events, commands
 from runner.adapters import repository
 from runner.service_layer import messagebus
 from dataclasses import dataclass
 
 
-class FakeExampleScript:
-    ref = 'example_script'
-
-
 @dataclass
-class FakeEvent(events.Event):
+class IncreamentCommand(commands.Command):
     pass
 
 
 @dataclass
-class NewEvent(events.Event):
+class Increamented(events.Event):
     pass
 
 
 def test_messagebus_can_handle():
-    global_event_cnt = [0]
+    global_handle_cnt = [0] # track total times in handlers
 
-    def fake_handler(event, repo, collector):
-        global_event_cnt[0] += 1
-        collector.add(NewEvent())
-        assert len(collector.events) == 1
-        return FakeExampleScript()
+    def broadcast_event(event, repo, msg_queue):
+        global_handle_cnt[0] += 1
 
-    def increament(*args):
-        global_event_cnt[0] += 1
+    def do_other_thing_after_increament(event, repo, msg_queue):
+        global_handle_cnt[0] += 1
 
-    event_collector = messagebus.EventCollector()
+    def increament(cmd, repo, msg_queue):
+        global_handle_cnt[0] += 1
+        msg_queue.append(Increamented())
 
-    messagebus.HANDLERS = {
-        FakeEvent: [fake_handler, increament],
-        NewEvent: [increament]
+    history = []
+
+    messagebus.COMMAND_HANDLERS = {IncreamentCommand: increament}
+
+    messagebus.EVENT_HANDLERS = {
+        Increamented: [broadcast_event, do_other_thing_after_increament]
     }
 
-    [script, *_] = messagebus.handle(
-        FakeEvent(), None, event_collector
-    )
+    results = messagebus.handle(IncreamentCommand(), None, history)
 
-    assert type(script) == FakeExampleScript
-    assert len(event_collector.events) == 1
-    assert global_event_cnt[0] == 3
+    assert len(history) == 2
+    assert type(history[0]) == IncreamentCommand
+    assert type(history[1]) == Increamented
+    assert global_handle_cnt[0] == 3

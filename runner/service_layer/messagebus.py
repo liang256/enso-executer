@@ -1,37 +1,66 @@
-from typing import List
-from runner.domain import events
+import logging
+from typing import List, Union
+from runner.domain import events, commands
 from runner.service_layer import handlers
+from runner.adapters import repository
 
 
-class EventCollector():
-    def __init__(self) -> None:
-        self.events = []
-        self._start_ptr = 0
-
-    def add(self, event: events.Event):
-        self.events.append(event)
-
-    def pop_new_events(self) -> List[events.Event]:
-        new_events = self.events[self._start_ptr:]
-        self._start_ptr = len(self.events)
-        return new_events
+logger = logging.getLogger(__name__)
 
 
-HANDLERS = {
-    events.QueryScript: [handlers.query_script],
-    events.QueryMissingArgsForScript: [handlers.query_missing_args_for_script],
-    events.ExecuteScript: [handlers.execute_script],
+Message = Union[events.Event, commands.Command]
+
+
+COMMAND_HANDLERS = {
+    commands.QueryScript: handlers.query_script,
+    commands.QueryMissingArgsForScript: handlers.query_missing_args_for_script,
+    commands.ExecuteScript: handlers.execute_script,
 }
 
 
-def handle(event: events.Event, repo, event_collector):
-    queue = [event]
+EVENT_HANDLERS = {events.ScriptExecuted: []}
+
+
+def handle(msg: Message, repo: repository.AbstractRepository, history: List[Message]):
+    queue = [msg]
     results = []
+
     while queue:
-        e = queue.pop(0)
-        for handler in HANDLERS.get(type(e), []):
-            results.append(handler(e, repo, event_collector))
-            queue.extend(event_collector.pop_new_events())
+        m = queue.pop(0)
+
+        # track all messages
+        history.append(m)
+
+        if isinstance(m, events.Event):
+            handle_event(m, repo, queue)
+        elif isinstance(m, commands.Command):
+            results.append(handle_command(m, repo, queue))
+        else:
+            raise Exception(f"{m} is not a Command or Event")
 
     return results
 
+
+def handle_event(
+    event: events.Event, repo: repository.AbstractRepository, msg_queue: List[Message]
+):
+    for handler in EVENT_HANDLERS[type(event)]:
+        try:
+            logger.debug("handling event %s with handler %s", event, handler)
+            handler(event, repo, msg_queue)
+        except Exception:
+            logger.exception("Exception handling event %s", event)
+            continue
+
+
+def handle_command(
+    cmd: commands.Command,
+    repo: repository.AbstractRepository,
+    msg_queue: List[Message],
+):
+    try:
+        handler = COMMAND_HANDLERS[type(cmd)]
+        return handler(cmd, repo, msg_queue)
+    except Exception:
+        logger.exception("Exception handling command %s", cmd)
+        raise
