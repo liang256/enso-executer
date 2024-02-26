@@ -14,7 +14,7 @@ class Job:
         self, jobid: str, instructions: List[Tuple[str, Dict]], state: str = "init"
     ) -> None:
         self.instructions = tuple(instructions)
-        self.state = "init"
+        self.state = state
         self.events = []
         self.id = jobid
 

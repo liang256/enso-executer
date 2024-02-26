@@ -1,5 +1,6 @@
 import abc
 import json
+from typing import List
 from pathlib import Path
 from runner.domain import model
 
@@ -20,22 +21,27 @@ class AbstractJobRepository(abc.ABC):
 
 class FileSystemRepository(AbstractJobRepository):
     def __init__(self) -> None:
+        self._jobs = {}
+
         with open(self.path) as file:
-            data = json.load(file)
-            self.jobs = {}
-            for jobid in data:
-                self.jobs[jobid] = model.Job(
-                    jobid, data[jobid]["instructions"], data[jobid]["state"]
-                )
+            try:
+                data = json.load(file)
+            except json.decoder.JSONDecodeError:
+                data = {}
+
+        for jobid in data:
+            self._jobs[jobid] = model.Job(
+                jobid, data[jobid]["instructions"], data[jobid]["state"]
+            )
 
     def add(self, job: model.Job) -> None:
-        self.jobs[job.id] = job
+        self._jobs[job.id] = job
 
     def get(self, reference: str) -> model.Job:
-        if reference not in self.jobs:
-            raise JobNotFound(reference)
+        return self._jobs.get(reference, None)
 
-        return self.jobs.get(reference)
+    def list(self) -> List[model.Job]:
+        return list(self._jobs.values())
 
     @property
     def path(self):

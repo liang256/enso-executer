@@ -1,26 +1,11 @@
 import argparse
 import json
-from runner.service_layer import job_services
+from runner.service_layer import job_services, unit_of_work
 from runner.adapters import job_repository, executer, repository as script_repo
 
 
-class FakeSession:
-    def __init__(self, job_repo) -> None:
-        self.job_repo = job_repo
-
-    def commit(self):
-        data = {}
-
-        for job in self.job_repo.jobs.values():
-            data[job.id] = {"instructions": job.instructions, "state": job.state}
-
-        with open(self.job_repo.path, "w") as file:
-            file.write(json.dumps(data))
-
-
-JOB_REPO = job_repository.FileSystemRepository()
+JOB_UOW = unit_of_work.FileSystemJobUnitOfWork()
 EXECUTER = executer.LocalExecuter(script_repo.FileSystemRepository())
-SESSION = FakeSession(JOB_REPO)
 
 
 def main():
@@ -33,9 +18,12 @@ def main():
 
     args = parser.parse_args()
 
-    job_services.execute(args.jobid, JOB_REPO, EXECUTER, SESSION)
+    with JOB_UOW:
+        print([j.state for j in JOB_UOW.jobs.list()])
 
-    job = JOB_REPO.get(args.jobid)  # read
+    job_services.execute(args.jobid, JOB_UOW, EXECUTER)
+
+    job = JOB_UOW.jobs.get(args.jobid)  # read
 
     print(f"executed {job.id}: {job.state}")
 

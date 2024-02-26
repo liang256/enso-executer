@@ -1,10 +1,11 @@
 import uuid
-from runner.service_layer import job_services
+from runner.service_layer import job_services, unit_of_work
 from runner.domain import model
 
 
-class FakeSession:
+class FakeJobUow(unit_of_work.AbstractJobUnitOfWork):
     def __init__(self) -> None:
+        self.jobs = FakeJobRepository()
         self.commited = False
 
     def commit(self):
@@ -32,23 +33,21 @@ class FailExecuter:
 
 def test_can_execute_job():
     job = model.Job(uuid.uuid4(), instructions=[])
-    repo = FakeJobRepository()
-    repo.add(job)
-    session = FakeSession()
+    job_uow = FakeJobUow()
+    job_uow.jobs.add(job)
 
-    job_services.execute(job.id, repo, executer=FakeExecuter(), session=session)
+    job_services.execute(job.id, job_uow, executer=FakeExecuter())
 
     assert job.state == "completed"
-    assert session.commited
+    assert job_uow.commited
 
 
 def test_fail_to_execute_job():
     job = model.Job(uuid.uuid4(), instructions=[])
-    repo = FakeJobRepository()
-    repo.add(job)
-    session = FakeSession()
+    job_uow = FakeJobUow()
+    job_uow.jobs.add(job)
 
-    job_services.execute(job.id, repo, executer=FailExecuter(), session=session)
+    job_services.execute(job.id, job_uow, executer=FailExecuter())
 
     assert job.state == "failed"
-    assert session.commited
+    assert job_uow.commited
