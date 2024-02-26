@@ -34,7 +34,7 @@ def test_can_execute_job():
     job = model.Job(uuid.uuid4(), instructions=[])
     repo = FakeJobRepository()
     repo.add(job)
-    session=FakeSession()
+    session = FakeSession()
 
     job_services.execute(job.id, repo, executer=FakeExecuter(), session=session)
 
@@ -46,7 +46,7 @@ def test_fail_to_execute_job():
     job = model.Job(uuid.uuid4(), instructions=[])
     repo = FakeJobRepository()
     repo.add(job)
-    session=FakeSession()
+    session = FakeSession()
 
     job_services.execute(job.id, repo, executer=FailExecuter(), session=session)
 
