@@ -51,4 +51,5 @@ def execute(
         except Exception:
             job.fail()
         finally:
+            job.version += 1
             job_uow.commit()

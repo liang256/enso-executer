@@ -20,6 +20,14 @@ def test_api(client):
     assert response.json == {"message": "Hello, World!"}
 
 
+def test_add_instruction_returns_201(client):
+    json_data = '{"instructions": [["example_script", {"data": 123}], ["example_script", {"data": 50}]], "dispatcher": "local"}'
+    r = client.post("/jobs", json=json.loads(json_data))
+
+    assert r.status_code == 201
+    assert r.json["message"] == "success"
+
+
 def test_happy_path_returns_201_and_execute_instruction(client):
     json_data = '{"instructions": [["example_script", {"data": 123}], ["example_script", {"data": 50}]], "dispatcher": "local"}'
     r = client.post("/jobs", json=json.loads(json_data))
