@@ -33,7 +33,4 @@ def test_unhappy_path_returns_400_and_error_message(client):
     r = client.post("/execute", json=json.loads(json_data))
 
     assert r.status_code == 400
-    assert (
-        f"ScriptNotFoundError: Script file nonexisting_script.py does not exist."
-        == r.json["message"]
-    )
+    assert r.json["message"] == "failed"

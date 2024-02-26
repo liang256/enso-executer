@@ -1,8 +1,25 @@
-from runner.adapters import job_repository as repo
+import uuid
+from typing import List, Tuple, Dict
+from runner.adapters import job_repository
+from runner.domain import model
 
 
-def execute(jobid: str, repo: repo.AbstractJobRepository, executer, session):
-    job = repo.get(jobid)
+def add(
+    instructions: List[Tuple[str, Dict]],
+    job_repo: job_repository.AbstractJobRepository,
+    session,
+):
+    jobid = uuid.uuid4()
+    job = model.Job(jobid, instructions)
+    job_repo.add(job)
+    session.commit()
+    return jobid
+
+
+def execute(
+    jobid: str, job_repo: job_repository.AbstractJobRepository, executer, session
+):
+    job = job_repo.get(jobid)
     try:
         executer(job)
         job.complete()

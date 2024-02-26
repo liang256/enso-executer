@@ -2,11 +2,27 @@ import json
 from flask import Flask, request, jsonify
 
 from runner.domain import model
-from runner.adapters import repository, dispatcher
-from runner.service_layer import services
+from runner.adapters import repository, executer
+from runner.service_layer import job_services
 
 
 app = Flask(__name__)
+
+
+class FakeSession:
+    def commit(self):
+        pass
+
+
+class FakeJobRepo(dict):
+    def add(self, job):
+        self[job.id] = job
+
+
+SESSION = FakeSession()
+JOB_REPO = FakeJobRepo()
+SCRIPT_REPO = repository.FileSystemRepository()
+EXECUTER = executer.LocalExecuter(SCRIPT_REPO)
 
 
 @app.route("/execute", methods=["POST"])
@@ -15,20 +31,25 @@ def execute_endpoint():
         return {"message": f"Invalid dispatcher: {request.json['dispatcher']}"}, 400
 
     try:
-        services.execute(
-            request.json["instructions"],
-            repository.FileSystemRepository(),
-            dispatcher.LocalDispathcer(),
-        )
+        jobid = job_services.add(request.json["instructions"], JOB_REPO, SESSION)
     except (
         json.decoder.JSONDecodeError,
-        model.MissingRequiredArguments,
-        repository.ScriptNotFoundError,
-        repository.LoadScriptError,
+        # model.MissingRequiredArguments,
+        # repository.ScriptNotFoundError,
+        # repository.LoadScriptError,
     ) as e:
         return {"message": f"{e.__class__.__name__}: {str(e)}"}, 400
 
-    return {"message": "success"}, 201
+    job_services.execute(
+        jobid=jobid, job_repo=JOB_REPO, executer=EXECUTER, session=SESSION
+    )
+
+    job = JOB_REPO.get(jobid)
+
+    if job.state == "failed":
+        return {"message": "failed", "job_id": jobid}, 400
+
+    return {"message": "success", "job_id": jobid}, 201
 
 
 @app.route("/api", methods=["GET"])
