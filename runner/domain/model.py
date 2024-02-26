@@ -9,12 +9,20 @@ class Instruction:
     args: Dict
 
 
-class Job(list):
-    @staticmethod
-    def from_primitive(instructions: List[Tuple]) -> "Job":
-        return Job(
-            [Instruction(script_ref, args) for script_ref, args in instructions]
-        )
+class Job:
+    def __init__(
+        self, jobid: str, instructions: List[Tuple[str, Dict]], state: str = "init"
+    ) -> None:
+        self._instructions = tuple(instructions)
+        self.state = "init"
+        self.events = []
+        self.id = jobid
+
+    def complete(self):
+        self.state = "completed"
+
+    def fail(self):
+        self.state = "failed"
 
 
 class MissingRequiredArguments(Exception):
