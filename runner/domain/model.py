@@ -24,6 +24,14 @@ class Job:
     def fail(self):
         self.state = "failed"
 
+    @staticmethod
+    def create_from_dict(data):
+        res = {}
+        for jobid in data:
+            res[jobid] = Job(jobid, data[jobid]["instructions"],
+                             data[jobid]["state"])
+        return res
+
 
 class MissingRequiredArguments(Exception):
     def __init__(self, class_name: str, missing_args: Tuple[str, ...]):

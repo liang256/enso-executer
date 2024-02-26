@@ -1,6 +1,7 @@
 import abc
 import json
-from typing import List
+import os
+from typing import List, Dict
 from pathlib import Path
 from runner.domain import model
 
@@ -21,18 +22,16 @@ class AbstractJobRepository(abc.ABC):
 
 class FileSystemRepository(AbstractJobRepository):
     def __init__(self) -> None:
-        self._jobs = {}
+        self._jobs = self.read()
 
+    def read(self) -> Dict[str, model.Job]:
         with open(self.path) as file:
             try:
                 data = json.load(file)
             except json.decoder.JSONDecodeError:
                 data = {}
 
-        for jobid in data:
-            self._jobs[jobid] = model.Job(
-                jobid, data[jobid]["instructions"], data[jobid]["state"]
-            )
+        return model.Job.create_from_dict(data)
 
     def add(self, job: model.Job) -> None:
         self._jobs[job.id] = job
@@ -51,5 +50,9 @@ class FileSystemRepository(AbstractJobRepository):
 
         # Construct the path to jobs.json relative to the script's directory
         jobs_file_path = script_directory / "jobs.json"
+
+        if not os.path.exists(jobs_file_path):
+            with open(jobs_file_path, 'w') as file:
+                file.write(json.dumps({}))
 
         return jobs_file_path
