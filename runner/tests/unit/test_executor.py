@@ -15,7 +15,7 @@ class FakeScriptRepo(dict):
         self[script_name] = FakeScript(script_name)
 
 
-def test_local_executor():
+def test_simple_executor():
     instructions = [
         ("open_file", {"path": "file/to/open"}),
         ("update_file", {}),
@@ -27,7 +27,7 @@ def test_local_executor():
     for script_name, _ in instructions:
         repo.add(script_name)
 
-    execute = executer.LocalExecuter(repo)
+    execute = executer.SimpleExecuter(repo)
     execute(job)
 
     assert len(job.events) == 3
