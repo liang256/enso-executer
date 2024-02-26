@@ -10,3 +10,10 @@ class Event:
 class InstructionsExecuted(Event):
     job_id: str
     instructions: List[Tuple[str, Dict]]
+
+
+@dataclass
+class ScriptExecuted(Event):
+    jobid: str
+    script: str
+    args: Dict

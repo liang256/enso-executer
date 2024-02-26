@@ -13,7 +13,7 @@ class Job:
     def __init__(
         self, jobid: str, instructions: List[Tuple[str, Dict]], state: str = "init"
     ) -> None:
-        self._instructions = tuple(instructions)
+        self.instructions = tuple(instructions)
         self.state = "init"
         self.events = []
         self.id = jobid
