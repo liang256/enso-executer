@@ -11,7 +11,11 @@ class Instruction:
 
 class Job:
     def __init__(
-        self, jobid: str, instructions: List[Tuple[str, Dict]], state: str = "init", version: int = 1
+        self,
+        jobid: str,
+        instructions: List[Tuple[str, Dict]],
+        state: str = "init",
+        version: int = 1,
     ) -> None:
         self.instructions = tuple(instructions)
         self.state = state
@@ -29,8 +33,12 @@ class Job:
     def create_from_dict(data):
         res = {}
         for jobid in data:
-            res[jobid] = Job(jobid, data[jobid]["instructions"],
-                             data[jobid]["state"], data[jobid]["version"])
+            res[jobid] = Job(
+                jobid,
+                data[jobid]["instructions"],
+                data[jobid]["state"],
+                data[jobid]["version"],
+            )
         return res
 
 

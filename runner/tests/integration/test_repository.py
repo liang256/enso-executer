@@ -1,6 +1,5 @@
 import pytest
 import os
-import inspect
 from typing import Dict
 from runner.adapters import repository
 from runner.domain import model

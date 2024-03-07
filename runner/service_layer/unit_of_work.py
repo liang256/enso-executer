@@ -20,7 +20,7 @@ class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
 
     def commit(self):
         old_jobs = self.jobs.read()
-        
+
         adding_new_job = len(old_jobs) + 1 == len(self.jobs.list())
 
         if not adding_new_job:
@@ -33,7 +33,11 @@ class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
         data = {}
 
         for job in self.jobs.list():
-            data[job.id] = {"instructions": job.instructions, "state": job.state, "version": job.version}
+            data[job.id] = {
+                "instructions": job.instructions,
+                "state": job.state,
+                "version": job.version,
+            }
 
         with open(self.jobs.path, "w") as file:
             file.write(json.dumps(data))

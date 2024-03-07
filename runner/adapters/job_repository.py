@@ -52,7 +52,7 @@ class FileSystemRepository(AbstractJobRepository):
         jobs_file_path = script_directory / "jobs.json"
 
         if not os.path.exists(jobs_file_path):
-            with open(jobs_file_path, 'w') as file:
+            with open(jobs_file_path, "w") as file:
                 file.write(json.dumps({}))
 
         return jobs_file_path
