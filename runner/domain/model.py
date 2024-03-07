@@ -1,6 +1,5 @@
 import abc
 from typing import Dict, Tuple, List
-from dataclasses import dataclass
 
 
 class JobStates:
