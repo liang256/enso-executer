@@ -3,10 +3,10 @@ from typing import Dict, Tuple, List
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
-class Instruction:
-    script_ref: str
-    args: Dict
+class JobStates:
+    Init = "init"
+    Failed = "failed"
+    Completed = "completed"
 
 
 class Job:
@@ -14,32 +14,35 @@ class Job:
         self,
         jobid: str,
         instructions: List[Tuple[str, Dict]],
-        state: str = "init",
+        state: str = JobStates.Init,
         version: int = 1,
     ) -> None:
         self.instructions = tuple(instructions)
-        self.state = state
+        self.state = state if state else JobStates.Init
         self.events = []
         self.id = jobid
         self.version = version
 
+    @property
+    def scripts(self) -> List[str]:
+        return [s for s, _ in self.instructions]
+
+    @property
+    def arguments(self) -> List[Dict]:
+        return [arg for _, arg in self.instructions]
+
     def complete(self):
-        self.state = "completed"
+        self.state = JobStates.Completed
 
     def fail(self):
-        self.state = "failed"
+        self.state = JobStates.Failed
 
-    @staticmethod
-    def create_from_dict(data):
-        res = {}
-        for jobid in data:
-            res[jobid] = Job(
-                jobid,
-                data[jobid]["instructions"],
-                data[jobid]["state"],
-                data[jobid]["version"],
-            )
-        return res
+    def has_errors(self) -> bool:
+        return len(self.errors) > 0
+
+    @classmethod
+    def from_dict(cls, adict):
+        return cls(**adict)
 
 
 class MissingRequiredArguments(Exception):

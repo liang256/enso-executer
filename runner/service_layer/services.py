@@ -1,7 +1,6 @@
 import uuid
 from typing import List, Tuple, Dict
-from runner.adapters import executer
-from runner.domain import model
+from runner.domain import model, events
 from runner.service_layer import unit_of_work
 
 
@@ -34,7 +33,6 @@ def add(
 def execute(
     jobid: str,
     job_uow: unit_of_work.AbstractJobUnitOfWork,
-    executer: executer.AbstractExecuter,
 ):
     with job_uow:
         job = job_uow.jobs.get(jobid)
@@ -45,11 +43,25 @@ def execute(
         if job.state != "init":
             raise JobHasCompleted(jobid)
 
-        try:
-            executer(job)
+        scripts = [job_uow.scripts.get(s) for s in job.scripts]
+
+        for script, arg in zip(scripts, job.arguments):
+            try:
+                script.execute(arg)
+                job.events.append(
+                    events.ScriptExecuted(jobid=jobid, script=script.ref, args=arg)
+                )
+            except Exception as ex:
+                job.events.append(
+                    events.ScriptFailed(
+                        jobid=jobid, script=script.ref, args=arg, message=str(ex)
+                    )
+                )
+                job.fail()
+                break
+
+        if job.state == model.JobStates.Init:
             job.complete()
-        except Exception:
-            job.fail()
-        finally:
             job.version += 1
-            job_uow.commit()
+
+        job_uow.commit()
