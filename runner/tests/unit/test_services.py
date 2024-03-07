@@ -32,7 +32,7 @@ class FakeScriptRepository:
 class FakeScript(model.AbstractScript):
     ref: str
 
-    def execute(self, args):
+    def execute(self, **args):
         pass
 
 
@@ -40,7 +40,7 @@ class FakeScript(model.AbstractScript):
 class ErrorScript(model.AbstractScript):
     ref: str
 
-    def execute(self, args):
+    def execute(self, **args):
         raise Exception("script fails")
 
 

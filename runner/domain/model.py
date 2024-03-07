@@ -12,7 +12,7 @@ class JobStates:
 class Job:
     def __init__(
         self,
-        jobid: str,
+        id: str,
         instructions: List[Tuple[str, Dict]],
         state: str = JobStates.Init,
         version: int = 1,
@@ -20,7 +20,7 @@ class Job:
         self.instructions = tuple(instructions)
         self.state = state if state else JobStates.Init
         self.events = []
-        self.id = jobid
+        self.id = id
         self.version = version
 
     @property

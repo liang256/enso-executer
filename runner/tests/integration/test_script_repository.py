@@ -1,7 +1,7 @@
 import pytest
 import os
 from typing import Dict
-from runner.adapters import repository
+from runner.adapters import script_repository
 from runner.domain import model
 
 
@@ -49,7 +49,7 @@ class FakeNewScript(model.AbstractScript):
 
 def test_file_system_repository_can_add_script(package_path):
     new_script = FakeNewScript()
-    repo = repository.FileSystemRepository(package_path)
+    repo = script_repository.FileSystemRepository(package_path)
     repo.add(new_script)
 
     expected_script_path = os.path.join(package_path, f"{new_script.ref}.py")
@@ -64,7 +64,7 @@ def test_file_system_repository_can_get_script(package_path):
     ref = "fake_script"
     content = "class FakeScript:\n    pass\n"
     uow = FileTestingUnionOfWork(package_path, ref, content)
-    repo = repository.FileSystemRepository(package_path)
+    repo = script_repository.FileSystemRepository(package_path)
 
     with uow:
         retrieved_script = repo.get(ref)
@@ -76,8 +76,8 @@ def test_file_system_repository_can_get_script(package_path):
 def test_file_system_repository_fail_to_get_script_since_file_not_exist(package_path):
     ref = "non_exist_script"
     expected_msg = f"Script file {ref}.py does not exist."
-    with pytest.raises(repository.ScriptNotFoundError, match=expected_msg):
-        repository.FileSystemRepository(package_path).get(ref)
+    with pytest.raises(script_repository.ScriptNotFoundError, match=expected_msg):
+        script_repository.FileSystemRepository(package_path).get(ref)
 
 
 def test_file_system_repository_fail_to_load_script(package_path):
@@ -86,5 +86,5 @@ def test_file_system_repository_fail_to_load_script(package_path):
     expected_msg = f"Error loading script {ref}"
 
     with FileTestingUnionOfWork(package_path, ref, content):
-        with pytest.raises(repository.LoadScriptError, match=expected_msg):
-            repository.FileSystemRepository(package_path).get(ref)
+        with pytest.raises(script_repository.LoadScriptError, match=expected_msg):
+            script_repository.FileSystemRepository(package_path).get(ref)

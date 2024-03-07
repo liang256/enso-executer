@@ -21,38 +21,48 @@ class AbstractJobRepository(abc.ABC):
 
 
 class FileSystemRepository(AbstractJobRepository):
-    def __init__(self) -> None:
+    def __init__(self, json_file_path: str = "") -> None:
+        self._path = json_file_path
         self._jobs = self.read()
 
     def read(self) -> Dict[str, model.Job]:
-        with open(self.path) as file:
-            try:
-                data = json.load(file)
-            except json.decoder.JSONDecodeError:
-                data = {}
+        data = []
+        if os.path.exists(self.path):
+            with open(self.path) as file:
+                try:
+                    data = json.load(file)
+                except json.decoder.JSONDecodeError:
+                    data = []
 
-        return model.Job.create_from_dict(data)
+        job_list = [model.Job.from_dict(row) for row in data]
+        return {j.id: j for j in job_list}
 
     def add(self, job: model.Job) -> None:
         self._jobs[job.id] = job
 
     def get(self, reference: str) -> model.Job:
-        return self._jobs.get(reference, None)
+        job = self._jobs.get(reference, None)
+        if job is None:
+            raise JobNotFound(f"Can not find job {reference}")
+        return job
 
     def list(self) -> List[model.Job]:
         return list(self._jobs.values())
 
     @property
     def path(self):
+        if self._path:
+            return self._path
+        self._path = self.default_path
+        return self._path
+
+    @property
+    def default_path(self):
         # Assuming __file__ is the path to the current script
         # Get the parent directory of the script
         script_directory = Path(__file__).parent
 
         # Construct the path to jobs.json relative to the script's directory
         jobs_file_path = script_directory / "jobs.json"
-
-        if not os.path.exists(jobs_file_path):
-            with open(jobs_file_path, "w") as file:
-                file.write(json.dumps({}))
 
         return jobs_file_path

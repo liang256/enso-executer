@@ -1,10 +1,12 @@
 import abc
 import json
-from runner.adapters import job_repository
+
+from runner.adapters import job_repository, script_repository, serializers
 
 
 class AbstractJobUnitOfWork(abc.ABC):
     jobs: job_repository.AbstractJobRepository
+    scripts: script_repository.AbstractRepository
 
     def __enter__(self) -> "AbstractJobUnitOfWork":
         return self
@@ -16,6 +18,7 @@ class AbstractJobUnitOfWork(abc.ABC):
 class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
     def __enter__(self) -> AbstractJobUnitOfWork:
         self.jobs = job_repository.FileSystemRepository()
+        self.scripts = script_repository.FileSystemRepository()
         return self
 
     def commit(self):
@@ -30,14 +33,5 @@ class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
                 if j.state != old_jobs[j.id].state:
                     assert j.version == old_jobs[j.id].version + 1
 
-        data = {}
-
-        for job in self.jobs.list():
-            data[job.id] = {
-                "instructions": job.instructions,
-                "state": job.state,
-                "version": job.version,
-            }
-
         with open(self.jobs.path, "w") as file:
-            file.write(json.dumps(data))
+            file.write(json.dumps(self.jobs.list(), cls=serializers.JobJsonEncoder))
