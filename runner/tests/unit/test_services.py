@@ -1,4 +1,5 @@
 import uuid
+import pytest
 from dataclasses import dataclass
 
 from runner.service_layer import services, unit_of_work
@@ -52,10 +53,14 @@ def test_can_execute_job():
     services.execute(job.id, job_uow)
 
     assert job.state == "completed"
+    assert len(job.events) == 1
+    assert job.events[0].jobid == job.id
+    assert job.events[0].script == "open_file"
+    assert job.events[0].args == {}
     assert job_uow.commited
 
 
-def test_fail_to_execute_job():
+def test_fail_to_execute_job_since_script_error():
     job = model.Job(str(uuid.uuid4()), instructions=[("open_file", {})])
     job_uow = FakeJobUow(FakeJobRepository(), FakeScriptRepository(ErrorScript))
     job_uow.jobs.add(job)
@@ -63,5 +68,19 @@ def test_fail_to_execute_job():
     services.execute(job.id, job_uow)
 
     assert job.state == "failed"
+    assert len(job.events) == 1
     assert job.events[0].message == str(Exception("script fails"))
     assert job_uow.commited
+
+
+def test_fail_to_execute_job_since_job_has_completed():
+    jobid = str(uuid.uuid4())
+    job = model.Job(
+        jobid, instructions=[("open_file", {})], state=model.JobStates.Completed
+    )
+    job_uow = FakeJobUow(FakeJobRepository(), FakeScriptRepository(FakeScript))
+    job_uow.jobs.add(job)
+
+    expected_msg = f"Job {jobid} has already completed."
+    with pytest.raises(services.JobHasCompleted, match=expected_msg):
+        services.execute(job.id, job_uow)

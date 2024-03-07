@@ -30,7 +30,7 @@ def execute(
         job = job_uow.jobs.get(jobid)
 
         if job.state != model.JobStates.Init:
-            raise JobHasCompleted(jobid)
+            raise JobHasCompleted(f"Job {jobid} has already completed.")
 
         for script_ref, arg in job.instructions:
             script = job_uow.scripts.get(script_ref)
