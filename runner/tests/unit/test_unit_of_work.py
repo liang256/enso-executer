@@ -22,6 +22,10 @@ def test_can_commit(job_json_file_path):
         uof.commit()
 
     with uof:
-        assert uof.jobs.get("dummy-job-id")
+        job = uof.jobs.get("dummy-job-id")
+        assert isinstance(job, model.Job)
+        assert job.id == "dummy-job-id"
+        assert job.instructions == tuple()
+        assert job.state == model.JobStates.Init
 
     remove_file(job_json_file_path)
