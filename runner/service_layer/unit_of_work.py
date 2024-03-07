@@ -16,8 +16,11 @@ class AbstractJobUnitOfWork(abc.ABC):
 
 
 class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
+    def __init__(self, storage_json_path: str = ""):
+        self._file_path = storage_json_path
+
     def __enter__(self) -> AbstractJobUnitOfWork:
-        self.jobs = job_repository.FileSystemRepository()
+        self.jobs = job_repository.FileSystemRepository(self._file_path)
         self.scripts = script_repository.FileSystemRepository()
         return self
 

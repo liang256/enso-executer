@@ -31,13 +31,15 @@ def snake_to_camel(snake_str):
 
 
 class FileSystemRepository(AbstractRepository):
+    @property
+    def default_root_dir(self):
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), "../scripts"))
+
     def __init__(self, root_dir: Optional[str] = None):
         if root_dir and os.path.isdir(root_dir):
             self.root_dir = root_dir
         else:
-            self.root_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "../domain/scripts")
-            )
+            self.root_dir = self.default_root_dir
 
     def add(self, script: model.AbstractScript) -> str:
         src_code = inspect.getsource(script.__class__)
