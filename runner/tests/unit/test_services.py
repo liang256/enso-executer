@@ -1,53 +1,86 @@
-from typing import Tuple, List, Dict
-from runner.adapters import dispatcher
-from runner.service_layer import services
+import uuid
+import pytest
+from dataclasses import dataclass
+
+from runner.service_layer import services, unit_of_work
 from runner.domain import model
 
 
-class FakeRepository(dict):
-    def list(self):
-        return self.values()
+class FakeJobUow(unit_of_work.AbstractJobUnitOfWork):
+    def __init__(self, job_repo, script_repo) -> None:
+        self.scripts = script_repo
+        self.jobs = job_repo
+        self.commited = False
+
+    def commit(self):
+        self.commited = True
 
 
-class FakeDispatcher(set):
-    def execute(self, instructions: List[Tuple[str, dict]], repo) -> str:
-        job_id = dispatcher.generate_job_id()
-        self.add(job_id)
-        return job_id
-
-    def has_executed(self, job_id: str) -> bool:
-        return job_id in self
+class FakeJobRepository(dict):
+    def add(self, job):
+        self[job.id] = job
 
 
+class FakeScriptRepository:
+    def __init__(self, script_cls):
+        self.script_cls = script_cls
+
+    def get(self, ref):
+        return self.script_cls(ref)
+
+
+@dataclass
 class FakeScript(model.AbstractScript):
-    required_args = tuple()
+    ref: str
 
-    def __init__(self, ref: str) -> None:
-        self.ref = ref
-
-    def execute(self, args: Dict) -> None:
-        print(f"execute {self.ref}")
+    def execute(self, **kwargs):
+        pass
 
 
-def test_get():
-    script_ref = "fake_script"
-    repo = FakeRepository(fake_script=FakeScript(script_ref))
+@dataclass
+class ErrorScript(model.AbstractScript):
+    ref: str
 
-    script_instance = services.get(script_ref, repo)
-
-    assert script_instance is not None
-    assert script_instance.ref == script_ref
+    def execute(self, **kwargs):
+        raise Exception("script fails")
 
 
-def test_execute():
-    repo = FakeRepository(
-        open_file=FakeScript("open_file"),
-        update_file=FakeScript("update_file"),
-        release_assets=FakeScript("release_assets"),
+def test_can_execute_job():
+    job = model.Job(str(uuid.uuid4()), instructions=[("open_file", {})])
+    job_uow = FakeJobUow(FakeJobRepository(), FakeScriptRepository(FakeScript))
+    job_uow.jobs.add(job)
+
+    services.execute(job.id, job_uow)
+
+    assert job.state == "completed"
+    assert len(job.events) == 1
+    assert job.events[0].jobid == job.id
+    assert job.events[0].script == "open_file"
+    assert job.events[0].args == {}
+    assert job_uow.commited
+
+
+def test_fail_to_execute_job_since_script_error():
+    job = model.Job(str(uuid.uuid4()), instructions=[("open_file", {})])
+    job_uow = FakeJobUow(FakeJobRepository(), FakeScriptRepository(ErrorScript))
+    job_uow.jobs.add(job)
+
+    services.execute(job.id, job_uow)
+
+    assert job.state == "failed"
+    assert len(job.events) == 1
+    assert job.events[0].message == str(Exception("script fails"))
+    assert job_uow.commited
+
+
+def test_fail_to_execute_job_since_job_has_completed():
+    jobid = str(uuid.uuid4())
+    job = model.Job(
+        jobid, instructions=[("open_file", {})], state=model.JobStates.Completed
     )
-    dispatcher = FakeDispatcher()
-    instructions = [("open_file", {}), ("update_file", {}), ("release_assets", {})]
+    job_uow = FakeJobUow(FakeJobRepository(), FakeScriptRepository(FakeScript))
+    job_uow.jobs.add(job)
 
-    job_id = services.execute(instructions, repo, dispatcher)
-
-    assert dispatcher.has_executed(job_id)
+    expected_msg = f"Job {jobid} has already completed."
+    with pytest.raises(services.JobHasCompleted, match=expected_msg):
+        services.execute(job.id, job_uow)
