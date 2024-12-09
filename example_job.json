@@ -1,0 +1,7 @@
+{
+    "instructions": [
+        ["example_script", {"arg1": "open houdini file", "arg2": "/path/to/houdini/file.hip"}],
+        ["example_script", {"arg1": "do something...", "arg2": "some arguments"}],
+        ["example_script", {"arg1": "save houdini file", "arg2": "/release/saved.hip"}]
+    ]
+}
