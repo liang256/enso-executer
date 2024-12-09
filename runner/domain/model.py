@@ -2,10 +2,12 @@ import abc
 from typing import Dict, Tuple, List
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class Instruction:
     script: str
     arguments: Dict
+
 
 class JobStates:
     Init = "init"
@@ -47,7 +49,7 @@ class Job:
     @classmethod
     def from_dict(cls, adict):
         return cls(**adict)
-    
+
     def to_dict(self):
         return {
             "id": self.id,
