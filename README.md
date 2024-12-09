@@ -61,7 +61,7 @@ Ensure you have the following installed:
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd enso_executor
+cd enso-executor
 ```
 2. Start the application:
 ```bash
@@ -69,38 +69,34 @@ make up
 ```
 3. Test the API:
 
-- Get list of jobs (should return an empty list):
-
-```bash
-curl http://localhost:5005/list-jobs
-```
-- Add a job:
-```bash
-curl -X POST http://localhost:5005/add-job \
--H "Content-Type: application/json" \
--d @./example_job.json
-```
-Expected response:
-
-```json
-{"jobid": "generated-job-id"}
-```
-- Get the job details (replace <jobid> with the returned jobid):
-```bash
-curl http://localhost:5005/get-job/<jobid>
-```
-- Execute the job:
-
-```bash
-curl -X POST http://localhost:5005/execute-job \
--H "Content-Type: application/json" \
--d '{"jobid": "<jobid>"}'
-```
-- Get updated list of jobs (to see job updates):
-
-```bash
-curl http://localhost:5005/list-jobs
-```
+    - Get list of jobs (should return an empty list):
+        ```bash
+        curl http://localhost:5005/list-jobs
+        ```
+    - Add a job:
+        ```bash
+        curl -X POST http://localhost:5005/add-job \
+        -H "Content-Type: application/json" \
+        -d @./example_job.json
+        ```
+        Expected response:
+        ```json
+        {"jobid": "generated-job-id"}
+        ```
+    - Get the job details (replace <jobid> with the returned jobid):
+        ```bash
+        curl http://localhost:5005/get-job/<jobid>
+        ```
+    - Execute the job:
+        ```bash
+        curl -X POST http://localhost:5005/execute-job \
+        -H "Content-Type: application/json" \
+        -d '{"jobid": "<jobid>"}'
+        ```
+    - Get updated list of jobs (to see job updates):
+        ```bash
+        curl http://localhost:5005/list-jobs
+        ```
 
 ### Usage Example
 Below is an example of the example_job.json content, which defines a series of instructions for a job:
