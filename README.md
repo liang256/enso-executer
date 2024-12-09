@@ -73,6 +73,7 @@ make up
         ```bash
         curl http://localhost:5005/list-jobs
         ```
+        
     - Add a job:
         ```bash
         curl -X POST http://localhost:5005/add-job \
@@ -83,20 +84,26 @@ make up
         ```json
         {"jobid": "generated-job-id"}
         ```
+
     - Get the job details (replace <jobid> with the returned jobid):
         ```bash
         curl http://localhost:5005/get-job/<jobid>
         ```
+
     - Execute the job:
         ```bash
         curl -X POST http://localhost:5005/execute-job \
         -H "Content-Type: application/json" \
         -d '{"jobid": "<jobid>"}'
         ```
+
     - Get updated list of jobs (to see job updates):
         ```bash
         curl http://localhost:5005/list-jobs
         ```
+
+    - Explore API Documentation:
+        You can visit http://localhost:5005/apidocs to view and interact with the API documentation.
 
 ### Usage Example
 Below is an example of the example_job.json content, which defines a series of instructions for a job:
