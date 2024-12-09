@@ -56,6 +56,7 @@ class Job:
             "instructions": self.instructions,
             "state": self.state,
             "version": self.version,
+            "events": [str(event) for event in self.events],
         }
 
 
