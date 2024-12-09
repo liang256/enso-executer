@@ -14,6 +14,9 @@ class AbstractJobUnitOfWork(abc.ABC):
     def __exit__(self, *args):
         return False
 
+    def commit(self):
+        raise NotImplementedError
+
 
 class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
     def __init__(self, storage_json_path: str = ""):
@@ -38,3 +41,12 @@ class FileSystemJobUnitOfWork(AbstractJobUnitOfWork):
 
         with open(self.jobs.path, "w") as file:
             file.write(json.dumps(self.jobs.list(), cls=serializers.JobJsonEncoder))
+
+
+class InMemoryJobUnitOfWork(AbstractJobUnitOfWork):
+    def __init__(self):
+        self.jobs = job_repository.InMemoryRepository()
+        self.scripts = script_repository.FileSystemRepository()
+
+    def commit(self):
+        pass

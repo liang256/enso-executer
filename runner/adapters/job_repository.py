@@ -66,3 +66,26 @@ class FileSystemRepository(AbstractJobRepository):
         jobs_file_path = script_directory / "jobs.json"
 
         return jobs_file_path
+
+
+class InMemoryRepository(AbstractJobRepository):
+    def __init__(self):
+        self._jobs = {}
+
+    def add(self, job: model.Job) -> None:
+        self._jobs[job.id] = job
+
+    def get(self, reference: str) -> model.Job:
+        job = self._jobs.get(reference, None)
+        if job is None:
+            raise JobNotFound(f"Can not find job {reference}")
+        return job
+
+    def list(self) -> List[model.Job]:
+        return list(self._jobs.values())
+
+    def __len__(self) -> int:
+        return len(self._jobs)
+
+    def __iter__(self):
+        return iter(self._jobs.values())

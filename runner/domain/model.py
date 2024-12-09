@@ -1,5 +1,12 @@
 import abc
 from typing import Dict, Tuple, List
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Instruction:
+    script: str
+    arguments: Dict
 
 
 class JobStates:
@@ -12,7 +19,7 @@ class Job:
     def __init__(
         self,
         id: str,
-        instructions: List[Tuple[str, Dict]],
+        instructions: List[Instruction],
         state: str = JobStates.Init,
         version: int = 1,
     ) -> None:
@@ -42,6 +49,15 @@ class Job:
     @classmethod
     def from_dict(cls, adict):
         return cls(**adict)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "instructions": self.instructions,
+            "state": self.state,
+            "version": self.version,
+            "events": [str(event) for event in self.events],
+        }
 
 
 class AbstractScript(abc.ABC):
