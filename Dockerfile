@@ -10,5 +10,5 @@ WORKDIR /code
 # Set PYTHONPATH to include /code
 ENV PYTHONPATH "${PYTHONPATH}:/code"
 
-ENV FLASK_APP=entrypoints/flask_app.py FLASK_DEBUG=1 PYTHONUNBUFFERED=1
+ENV FLASK_APP=runner.entrypoints.flask_app FLASK_DEBUG=1 PYTHONUNBUFFERED=1
 CMD flask run --host=0.0.0.0 --port=80

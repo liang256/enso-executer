@@ -1,5 +1,7 @@
 pytest
+schema
 sqlalchemy
 flask
 psycopg2-binary
 requests
+flasgger
