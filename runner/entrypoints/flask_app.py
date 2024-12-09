@@ -14,8 +14,10 @@ UNIT_OF_WORK = unit_of_work.InMemoryJobUnitOfWork()
 @app.route("/add-job", methods=["POST"])
 def add_job():
     """
-    Add a new job
+    Add a new job.
     ---
+    tags:
+      - Job Management
     parameters:
       - in: body
         name: body
@@ -25,8 +27,16 @@ def add_job():
           properties:
             instructions:
               type: array
+              description: List of instructions, each containing a script and its arguments.
               items:
-                type: object
+                type: array
+                minItems: 2
+                maxItems: 2
+                items:
+                  - type: string
+                    description: Script name
+                  - type: object
+                    description: Dictionary of arguments for the script
     responses:
       201:
         description: Job added successfully
@@ -36,7 +46,7 @@ def add_job():
             jobid:
               type: string
       400:
-        description: Missing instructions
+        description: Missing or invalid instructions
     """
     data = request.json
     instructions = data.get("instructions")
@@ -50,8 +60,10 @@ def add_job():
 @app.route("/list-jobs", methods=["GET"])
 def list_jobs():
     """
-    List all jobs
+    List all jobs.
     ---
+    tags:
+      - Job Management
     responses:
       200:
         description: A list of jobs
@@ -65,12 +77,33 @@ def list_jobs():
                 properties:
                   id:
                     type: string
+                    description: Unique identifier of the job
                   state:
                     type: string
+                    description: Current state of the job
+                  version:
+                    type: integer
+                    description: Version of the job
                   instructions:
                     type: array
+                    description: List of instructions for the job
                     items:
                       type: object
+                      properties:
+                        script:
+                          type: string
+                          description: Name of the script
+                        arguments:
+                          type: object
+                          additionalProperties:
+                            type: string
+                          description: Key-value arguments for the script
+                  events:
+                    type: array
+                    description: List of events for the job execution
+                    items:
+                      type: string
+                      description: Event description
     """
     jobs = UNIT_OF_WORK.jobs.list()
     return jsonify({"jobs": [job.to_dict() for job in jobs]})
@@ -79,13 +112,17 @@ def list_jobs():
 @app.route("/get-job/<jobid>", methods=["GET"])
 def get_job(jobid):
     """
-    Get a job by ID
+    Get details of a specific job by ID.
     ---
+    tags:
+      - Job Management
     parameters:
       - in: path
         name: jobid
         required: true
-        type: string
+        schema:
+          type: string
+        description: The ID of the job
     responses:
       200:
         description: Job details
@@ -94,12 +131,33 @@ def get_job(jobid):
           properties:
             id:
               type: string
+              description: Unique identifier of the job
             state:
               type: string
+              description: Current state of the job
+            version:
+              type: integer
+              description: Version of the job
             instructions:
               type: array
+              description: List of instructions for the job
               items:
                 type: object
+                properties:
+                  script:
+                    type: string
+                    description: Name of the script
+                  arguments:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    description: Key-value arguments for the script
+            events:
+              type: array
+              description: List of events for the job execution
+              items:
+                type: string
+                description: Event description
       404:
         description: Job not found
     """
@@ -112,8 +170,10 @@ def get_job(jobid):
 @app.route("/execute-job", methods=["POST"])
 def execute_job():
     """
-    Execute a job by ID
+    Execute a job by ID.
     ---
+    tags:
+      - Job Management
     parameters:
       - in: body
         name: body
@@ -123,6 +183,7 @@ def execute_job():
           properties:
             jobid:
               type: string
+              description: The ID of the job to execute
     responses:
       200:
         description: Job executed successfully
@@ -134,7 +195,7 @@ def execute_job():
             message:
               type: string
       400:
-        description: Job already executed or missing jobid
+        description: Job already executed or invalid jobid
       404:
         description: Job not found
     """
