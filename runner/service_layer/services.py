@@ -28,17 +28,42 @@ def add(
     return jobid
 
 
+def get(jobid: str, job_uow: unit_of_work.AbstractJobUnitOfWork) -> Dict:
+    with job_uow:
+        try:
+            job = job_uow.jobs.get(jobid)
+        except job_repository.JobNotFound:
+            return None
+        return job.to_dict()
+
+
 def execute(
     jobid: str,
     job_uow: unit_of_work.AbstractJobUnitOfWork,
 ):
+    """
+    Executes a job with the given job ID within the provided unit of work.
+
+    Args:
+        jobid (str): The ID of the job to execute.
+        job_uow (unit_of_work.AbstractJobUnitOfWork): The unit of work context for job execution.
+    Raises:
+        JobHasCompleted: If the job has already completed.
+        job_repository.JobNotFound: If the job is not found in the unit of work.
+
+    The function retrieves the job using the job ID and executes each instruction in the job.
+    If an instruction fails, it logs the failure event and marks the job as failed.
+    If all instructions are executed successfully, it marks the job as complete and increments the job version.
+    Finally, it commits the changes in the unit of work.
+    """
     with job_uow:
         job = job_uow.jobs.get(jobid)
 
         if job.state != model.JobStates.Init:
             raise JobHasCompleted(f"Job {jobid} has already completed.")
 
-        for script_ref, arg in job.instructions:
+        for inctruction in job.instructions:
+            script_ref, arg = inctruction.script, inctruction.arguments
             script = job_uow.scripts.get(script_ref)
 
             try:
