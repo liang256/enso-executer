@@ -51,6 +51,71 @@ for event in job.events:
     print(event)
 ```
 
+## Getting Started
+### Prerequisites
+Ensure you have the following installed:
+- Docker
+- Docker Compose
+
+### Steps to Up and Use the App
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd enso_executor
+```
+2. Start the application:
+```bash
+make up
+```
+3. Test the API:
+
+- Get list of jobs (should return an empty list):
+
+```bash
+curl http://localhost:5005/list-jobs
+```
+- Add a job:
+```bash
+curl -X POST http://localhost:5005/add-job \
+-H "Content-Type: application/json" \
+-d @./example_job.json
+```
+Expected response:
+
+```json
+{"jobid": "generated-job-id"}
+```
+- Get the job details (replace <jobid> with the returned jobid):
+```bash
+curl http://localhost:5005/get-job/<jobid>
+```
+- Execute the job:
+
+```bash
+curl -X POST http://localhost:5005/execute-job \
+-H "Content-Type: application/json" \
+-d '{"jobid": "<jobid>"}'
+```
+- Get updated list of jobs (to see job updates):
+
+```bash
+curl http://localhost:5005/list-jobs
+```
+
+### Usage Example
+Below is an example of the example_job.json content, which defines a series of instructions for a job:
+
+```json
+{
+  "instructions": [
+    ["example_script", {"arg1": "open houdini file", "arg2": "/path/to/houdini/file.hip"}],
+    ["example_script", {"arg1": "do something...", "arg2": "some arguments"}],
+    ["example_script", {"arg1": "save houdini file", "arg2": "/release/saved.hip"}]
+  ]
+}
+```
+You can modify this file to create custom jobs with different scripts and arguments.
+
 ## Design Philosophy
 ### Challenges in Legacy Systems
 - Tightly Coupled Logic:
